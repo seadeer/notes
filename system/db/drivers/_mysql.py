@@ -2,7 +2,9 @@ import mysql.connector
 import collections
 
 def _convert(data):
-    if isinstance(data, basestring):
+    if isinstance(data, unicode):
+        return unicode(data)
+    elif isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
         return dict(map(_convert, data.iteritems()))
@@ -25,13 +27,27 @@ class MySQLConnection(object):
 
     def query_db(self, query, data=None):
         cursor = self.conn.cursor(dictionary=True)
-        data = cursor.execute(query, data)
-        if query[0:6].lower() != 'select':
+        if len(query.split(';')) > 1:
+            data = cursor.execute(query, data, multi=True)
+            for cur in data:
+                print('cursor:', cur)
+                if cur.with_rows:
+                    result = list(cur.fetchall())
             self.conn.commit()
-            return
+            try:
+                _convert(result)
+            except UnboundLocalError:
+                pass
+            else:
+                return _convert(result)
         else:
-            result = list(cursor.fetchall())
-            return _convert(result)
+            data = cursor.execute(query, data)
+            if query[0:6].lower() != 'select':
+                self.conn.commit()
+                return
+            else:
+                result = list(cursor.fetchall())
+                return _convert(result)
 
 def connect(config):
     return MySQLConnection(config)
