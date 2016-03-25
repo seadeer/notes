@@ -1,8 +1,72 @@
 <html>
   <head>
+        <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="/static/css/styles.css" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+
+            $('div.note_display .content').on('click', function()
+            {
+                var elId = $(this).attr('id');
+                $.get("/notes/ajax_showform/"+$(this).attr('id'), function(data)
+                    {
+                        $('#'+elId).hide();
+                        $('#'+elId).parent().append(data);
+                    });
+                    return false;
+            });
+
+            $('body').on('focusout', '.note_display textarea', function()
+            {   
+                console.log("I'm focused out")
+                var formId = $(this).parent().attr('id');
+                console.log("I'm focused out, here's my ID:", formId)
+                elId = formId.slice(4);
+                $.post("/notes/edit/"+elId, $(this).serialize(), function(res)
+                {
+                    console.log("Posting", res);
+                    $('#'+formId).hide();
+                    $('#'+elId).html(res);
+                    $('#'+elId).show();
+                });
+                
+                return false;
+            });
+        //end of script            
+        });
+
+        
+    </script>
+
   </head>
   <body>
-    The best place to start is the "WelcomeController.py" file in app/controllers.
+    <div class="container">
+        <div class="header"><h1>My Notes</h1></div>
+        {% for note in notes %}
+        <div class="note">
+            <form class="delete" action="/notes/delete/{{note['id']}}" method="post">
+            <input type="submit" class="delete" value="Delete">
+            </form>
+            <div class="note_display">
+                <h1 class="title">{{note['title']}}</h1>
+                <p class="content" id ="{{note['id']}}">{{note['content']}}</p>
+            </div>
+        </div>
+        <hr>
+        {% endfor %}
+        <form action = "/notes/add" method="post">
+        <p><label>Title:</label></p>
+        <input type="text" name="title"> 
+        <input type="submit" value="New Note"></form>
+    </div>
   </body>
 </html>
